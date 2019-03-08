@@ -1,0 +1,13 @@
+[package]
+name = "bitbang-wiegand"
+version = "0.1.0"
+authors = ["Jacob Rosenthal <jacobrosenthal@gmail.com>"]
+edition = "2018"
+
+[dependencies.embedded-hal]
+version = "~0.2"
+features = ["unproven"]
+
+[dev-dependencies.rppal]
+git = "https://github.com/golemparts/rppal.git"
+features = ["hal", "hal-unproven"]
