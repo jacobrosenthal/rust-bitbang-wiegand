@@ -1,4 +1,5 @@
 use bitbang_wiegand::Wiegand;
+use embedded_hal::blocking::Delay;
 use rppal::gpio::Gpio;
 
 const DATA0: u8 = 18;
@@ -9,7 +10,9 @@ fn main() -> ! {
     let data0 = Gpio::new().unwrap().get(DATA0).unwrap().into_input();
     let data1 = Gpio::new().unwrap().get(DATA1).unwrap().into_input();
 
-    let mut wiegand = Wiegand::new(data0, data1);
+    let mut delay = Delay {};
+
+    let mut wiegand = Wiegand::new(data0, data1, delay);
 
     loop {
         let data = wiegand.read();
