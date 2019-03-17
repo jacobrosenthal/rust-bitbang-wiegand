@@ -1,3 +1,4 @@
+#![feature(integer_atomics)]
 use bitbang_wiegand::Wiegand;
 use rppal::gpio::Gpio;
 
