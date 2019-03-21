@@ -4,10 +4,15 @@ version = "0.1.0"
 authors = ["Jacob Rosenthal <jacobrosenthal@gmail.com>"]
 edition = "2018"
 
+[dependencies]
+nb = "0.1.1"
+bitrate = "0.1.1"
+
 [dependencies.embedded-hal]
 version = "~0.2"
 features = ["unproven"]
 
 [dev-dependencies.rppal]
 git = "https://github.com/golemparts/rppal.git"
-features = ["hal", "hal-unproven"]
+rev  = "fb0c9f1ae2ac0ff15ee0058e9c3cde98d104f201"
+features = ["hal-unproven"]
