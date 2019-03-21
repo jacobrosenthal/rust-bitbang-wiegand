@@ -2,14 +2,18 @@
 
 use bit_field::BitField;
 use core::convert::TryFrom;
+use core::time::Duration;
 use embedded_hal::{
     blocking::delay::DelayUs,
     digital::{InputPin, OutputPin},
+    timer::CountDown,
 };
+use nb;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Error {
     Parity,
+    TimedOut,
     _Extensible,
 }
 
@@ -35,6 +39,7 @@ pub trait Write {
     fn write(&mut self, delay: &mut DelayUs<u32>, data: u32);
 }
 
+// is blocking 2.1ms * 26 = 54.6 ms
 impl<Data0, Data1> WiegandOutput<Data0, Data1>
 where
     Data0: OutputPin,
@@ -65,7 +70,6 @@ where
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct WiegandData {
     pub facility: u8,
     pub id: u16,
@@ -138,25 +142,69 @@ where
     pub fn new(data0: Data0, data1: Data1) -> Self {
         Self { data0, data1 }
     }
+}
 
-    pub fn read(&mut self) -> Result<WiegandData, Error> {
+pub trait Read<T>
+where
+    T: CountDown,
+{
+    fn read(&mut self, timer: &mut T) -> nb::Result<WiegandData, Error>;
+}
+
+// might need +Cancel if this doesnt accept https://github.com/rust-embedded/embedded-hal/issues/106
+// requires 10s of microsecond resolution
+// even though is non blocking waiting to start, is blocking during reading 2.1ms * 26 = 54.6 ms
+impl<Data0, Data1, T, U> Read<T> for WiegandInput<Data0, Data1>
+where
+    Data0: InputPin,
+    Data1: InputPin,
+    T: embedded_hal::timer::CountDown<Time = U>,
+    U: From<Duration>,
+{
+    fn read(&mut self, timer: &mut T) -> nb::Result<WiegandData, Error> {
+        while self.data0.is_high() && self.data1.is_high() {
+            return Err(nb::Error::WouldBlock);
+        }
+
         let mut data_in: u32 = 0;
 
-        for _bit in 0..26 {
-            while self.data0.is_high() && self.data1.is_high() {}
+        for bit in 0..26 {
+            // first time through we already found the bit above
+            if bit != 0 {
+                // Ive seen ~2ms here so 3ms?
+                timer.start(Duration::from_micros(3000));
+                while self.data0.is_high() && self.data1.is_high() {
+                    match timer.wait() {
+                        Err(nb::Error::Other(_e)) => unreachable!(),
+                        Err(nb::Error::WouldBlock) => {}
+                        Ok(()) => return Err(nb::Error::Other(Error::TimedOut)),
+                    }
+                }
+            }
 
-            //shift first because we have room to spare on the left
-            //and because we dont want to be shifted over after bit 26
+            // shift first because we have room to spare on the left
+            // and because we dont want to be shifted over after bit 26
             data_in <<= 1;
 
             if self.data1.is_low() {
                 data_in |= 1;
             }
 
-            while self.data0.is_low() || self.data1.is_low() {}
+            // Ive seen ~100us here, so 1ms?
+            timer.start(Duration::from_micros(1000));
+            while self.data0.is_low() || self.data1.is_low() {
+                match timer.wait() {
+                    Err(nb::Error::Other(_e)) => unreachable!(),
+                    Err(nb::Error::WouldBlock) => {}
+                    Ok(()) => return Err(nb::Error::Other(Error::TimedOut)),
+                }
+            }
         }
 
-        WiegandData::try_from(data_in)
+        match WiegandData::try_from(data_in) {
+            Err(e) => Err(nb::Error::Other(e)),
+            Ok(v) => Ok(v),
+        }
     }
 }
 
