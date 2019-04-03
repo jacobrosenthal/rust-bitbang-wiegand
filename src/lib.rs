@@ -1,8 +1,8 @@
 #![no_std]
 
-use rppal::{hal::Hertz};
 use embedded_hal::digital::InputPin;
 use embedded_hal::timer::CountDown;
+use rppal::hal::Hertz;
 
 use nb;
 
