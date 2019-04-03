@@ -48,9 +48,16 @@ fn main() -> ! {
     let timer = Timer::new();
 
     loop {
-        let data1 = block!(wiegand1.read(timer)).unwrap();
-        println!("facility:{} id:{}", data1.facility, data1.id);
-        let data2 = block!(wiegand2.read(timer)).unwrap();
-        println!("facility:{} id:{}", data2.facility, data2.id);
+        match wiegand1.read(timer) {
+            Err(nb::Error::Other(e)) => println!("wiegand1 read error {:?}", e),
+            Err(nb::Error::WouldBlock) => {}
+            Ok(data) => println!("facility:{} id:{}", data.facility, data.id),
+        }
+
+        match wiegand2.read(timer) {
+            Err(nb::Error::Other(e)) => println!("wiegand2 read error {:?}", e),
+            Err(nb::Error::WouldBlock) => {}
+            Ok(data) => println!("facility:{} id:{}", data.facility, data.id),
+        }
     }
 }

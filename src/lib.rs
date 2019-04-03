@@ -1,6 +1,6 @@
 #![no_std]
 
-use bitrate::Hertz;
+use rppal::{hal::Hertz};
 use embedded_hal::digital::InputPin;
 use embedded_hal::timer::CountDown;
 
@@ -58,7 +58,7 @@ where
     Data0: InputPin,
     Data1: InputPin,
     T: embedded_hal::timer::CountDown<Time = U>,
-    U: From<Hertz<u64>>,
+    U: From<Hertz>,
 {
     fn read(&mut self, mut timer: T) -> nb::Result<WiegandData, Error> {
         while self.data0.is_high() && self.data1.is_high() {
