@@ -12,7 +12,7 @@ bitrate = "0.1.1"
 version = "~0.2"
 features = ["unproven"]
 
-[dependencies.rppal]
+[dev-dependencies.rppal]
 git = "https://github.com/golemparts/rppal.git"
 rev  = "abd9d4da"
 features = ["hal-unproven"]
