@@ -2,7 +2,7 @@
 
 use embedded_hal::digital::InputPin;
 use embedded_hal::timer::CountDown;
-use rppal::hal::Hertz;
+use core::time::Duration;
 
 use nb;
 
@@ -26,7 +26,7 @@ pub struct WiegandData {
     pub id: u16,
 }
 
-//todo.. cute but.. is it confusing?
+// todo.. cute but.. is it confusing?
 impl From<u32> for WiegandData {
     fn from(item: u32) -> Self {
         let id: u16 = (item >> 1) as u16;
@@ -52,13 +52,13 @@ where
     fn read(&mut self, mut timer: T) -> nb::Result<WiegandData, Error>;
 }
 
-//might need +Cancel if this doesnt accept https://github.com/rust-embedded/embedded-hal/issues/106
+// might need +Cancel if this doesnt accept https://github.com/rust-embedded/embedded-hal/issues/106
 impl<Data0, Data1, T, U> Read<T> for Wiegand<Data0, Data1>
 where
     Data0: InputPin,
     Data1: InputPin,
     T: embedded_hal::timer::CountDown<Time = U>,
-    U: From<Hertz>,
+    U: From<Duration>,
 {
     fn read(&mut self, mut timer: T) -> nb::Result<WiegandData, Error> {
         while self.data0.is_high() && self.data1.is_high() {
@@ -68,11 +68,11 @@ where
         let mut data_in: u32 = 0;
 
         for _bit in 0..26 {
-            //more than 100us here would be a problem so 1ms?
-            //were not blocking on timer.wait so if its resolution is less than ms
+            // more than 100us here would be a problem so 1ms?
+            // were not blocking on timer.wait so if its resolution is less than ms
             // say us, then this will tick at us until we go high again
             // or error if it gets up to 1ms
-            timer.start(Hertz(1000));
+            timer.start(Duration::from_millis(1));
             while self.data0.is_high() && self.data1.is_high() {
                 match timer.wait() {
                     Err(nb::Error::Other(_e)) => unreachable!(),
@@ -81,19 +81,19 @@ where
                 }
             }
 
-            //shift first because we have room to spare on the left
-            //and because we dont want to be shifted over after bit 26
+            // shift first because we have room to spare on the left
+            // and because we dont want to be shifted over after bit 26
             data_in <<= 1;
 
             if self.data1.is_low() {
                 data_in |= 1;
             }
 
-            //more than 1ms here would be a problem so 2ms?
-            //were not blocking on timer.wait so if its resolution is less than ms
+            // more than 1ms here would be a problem so 2ms?
+            // were not blocking on timer.wait so if its resolution is less than ms
             // say us, then this will tick at us until we go high again
             // or error if it gets up to 2ms
-            timer.start(Hertz(2000));
+            timer.start(Duration::from_millis(2));
             while self.data0.is_low() || self.data1.is_low() {
                 match timer.wait() {
                     Err(nb::Error::Other(_e)) => unreachable!(),

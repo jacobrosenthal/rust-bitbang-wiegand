@@ -1,5 +1,4 @@
 use bitbang_wiegand::{Read, Wiegand};
-use nb::block;
 use rppal::{gpio::Gpio, hal::Timer};
 
 const HID_DATA0: u8 = 2;
