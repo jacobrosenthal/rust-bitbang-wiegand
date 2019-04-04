@@ -72,7 +72,7 @@ where
             // were not blocking on timer.wait so if its resolution is less than ms
             // say us, then this will tick at us until we go high again
             // or error if it gets up to 1ms
-            timer.start(Duration::from_millis(1));
+            timer.start(Duration::from_millis(1000));
             while self.data0.is_high() && self.data1.is_high() {
                 match timer.wait() {
                     Err(nb::Error::Other(_e)) => unreachable!(),
@@ -93,7 +93,7 @@ where
             // were not blocking on timer.wait so if its resolution is less than ms
             // say us, then this will tick at us until we go high again
             // or error if it gets up to 2ms
-            timer.start(Duration::from_millis(2));
+            timer.start(Duration::from_millis(2000));
             while self.data0.is_low() || self.data1.is_low() {
                 match timer.wait() {
                     Err(nb::Error::Other(_e)) => unreachable!(),
