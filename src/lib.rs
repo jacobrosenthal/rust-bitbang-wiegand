@@ -10,6 +10,9 @@ use embedded_hal::{
 };
 use nb;
 
+#[cfg(feature = "unstable")]
+use futures::{Async, Poll, Stream};
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Error {
     Parity,
@@ -284,4 +287,32 @@ mod tests {
         assert_eq!(data_out, 0x2FCFFFC);
     }
 
+}
+
+#[cfg(feature = "unstable")]
+pub struct WiegandStream<R, T, U>
+where
+    R: Read<T>,
+    T: embedded_hal::timer::CountDown<Time = U>,
+    U: From<Duration>,
+{
+    pub wiegand: R,
+    pub timer: T,
+}
+
+#[cfg(feature = "unstable")]
+impl<R, T, U> Stream for WiegandStream<R, T, U>
+where
+    R: Read<T>,
+    T: embedded_hal::timer::CountDown<Time = U>,
+    U: From<Duration>,
+{
+    type Item = WiegandData;
+    type Error = Error;
+
+    fn poll(&mut self) -> Poll<Option<Self::Item>, Error> {
+        Ok(Async::Ready(Some(try_nb!(self
+            .wiegand
+            .read(&mut self.timer)))))
+    }
 }
