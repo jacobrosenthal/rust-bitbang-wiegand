@@ -1,4 +1,4 @@
-use bitbang_wiegand::Wiegand;
+use bitbang_wiegand::WiegandInput;
 use rppal::gpio::Gpio;
 
 const DATA0: u8 = 18;
@@ -9,10 +9,12 @@ fn main() -> ! {
     let data0 = Gpio::new().unwrap().get(DATA0).unwrap().into_input_pullup();
     let data1 = Gpio::new().unwrap().get(DATA1).unwrap().into_input_pullup();
 
-    let mut wiegand = Wiegand::new(data0, data1);
+    let mut wiegand = WiegandInput::new(data0, data1);
 
     loop {
-        let data = wiegand.read();
-        println!("facility:{} id:{}", data.facility, data.id);
+        match wiegand.read() {
+            Ok(data) => println!("facility:{} id:{}", data.facility, data.id),
+            Err(e) => println!("error reading: {:?}", e),
+        }
     }
 }
