@@ -311,7 +311,7 @@ where
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Error> {
-        Ok(Async::Ready(Some(try_nb!(self
+        Ok(Async::Ready(Some(nb::try_nb!(self
             .wiegand
             .read(&mut self.timer)))))
     }
