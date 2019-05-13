@@ -17,6 +17,8 @@ use futures::{Async, Poll, Stream};
 pub enum Error {
     Parity,
     TimedOut,
+    TimedOutUp(u32),
+    TimedOutDown(u32),
     _Extensible,
 }
 
@@ -181,7 +183,7 @@ where
                     match timer.wait() {
                         Err(nb::Error::Other(_e)) => unreachable!(),
                         Err(nb::Error::WouldBlock) => {}
-                        Ok(()) => return Err(nb::Error::Other(Error::TimedOut)),
+                        Ok(()) => return Err(nb::Error::Other(Error::TimedOutUp(data_in))),
                     }
                 }
             }
@@ -200,7 +202,7 @@ where
                 match timer.wait() {
                     Err(nb::Error::Other(_e)) => unreachable!(),
                     Err(nb::Error::WouldBlock) => {}
-                    Ok(()) => return Err(nb::Error::Other(Error::TimedOut)),
+                    Ok(()) => return Err(nb::Error::Other(Error::TimedOutDown(data_in))),
                 }
             }
         }
