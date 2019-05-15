@@ -178,7 +178,7 @@ where
             // first time through we already found the bit above
             if bit != 0 {
                 // Ive seen ~2ms here so 3ms?
-                timer.start(Duration::from_micros(3000));
+                timer.start(Duration::from_micros(4000));
                 while self.data0.is_high() && self.data1.is_high() {
                     match timer.wait() {
                         Err(nb::Error::Other(_e)) => unreachable!(),
