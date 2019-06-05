@@ -73,6 +73,7 @@ where
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct WiegandData {
     pub facility: u8,
     pub id: u16,
