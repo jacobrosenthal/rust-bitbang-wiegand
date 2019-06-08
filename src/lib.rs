@@ -317,3 +317,61 @@ where
             .read(&mut self.timer)))))
     }
 }
+
+pub enum Bit {
+    High,
+    Low,
+}
+
+pub struct WiegandInputInterrupted {
+    data_in: u32,
+    count: u8,
+    // last: Instant
+}
+
+impl WiegandInputInterrupted {
+    pub fn new() -> Self {
+        Self {
+            data_in: 0,
+            count: 0,
+        }
+    }
+
+    pub fn accumulate(&mut self, bit: Bit) -> nb::Result<WiegandData, Error> {
+        // technically, theres no reason to think these are being delivered
+        // at the rate theyre triggered, so we want a timeout that is very forgiving
+        // but will clear when the next read comes in
+        // if count > 0 && self.last.elapsed().as_millis() > 100 {
+        //     log!("hid timed out at bit:{} {}", self.count, self.data_in);
+        //     self.count = 0;
+        //     self.data_in = 0;
+        // }
+
+        // self.last = Instant::now();
+
+        // shift first because we have room to spare on the left
+        // and because we dont want to be shifted over after bit 26
+        self.data_in <<= 1;
+
+        match bit {
+            Bit::High => self.data_in |= 1,
+            Bit::Low => {}
+        }
+
+        self.count += 1;
+
+        if self.count >= 26 {
+            let result = match WiegandData::try_from(self.data_in) {
+                Err(e) => Err(nb::Error::Other(e)),
+                Ok(v) => Ok(v),
+            };
+
+            self.count = 0;
+            self.data_in = 0;
+
+            result.into()
+        } else {
+            Err(nb::Error::WouldBlock)
+        }
+    }
+}
